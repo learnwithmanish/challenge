@@ -15,8 +15,8 @@ The Setup Consists of :
 
 **Execution of ARM template json files. 
 There are three files
-      1. Template.json
-      2. Parameters.json
+      1. AppInfra.json
+      2. ParameterFile.json
       3. Deploy.ps1
 
       Use Powershell 7.0 and above to execute Deploy.ps1. Connect the Azure Subscription from Powershell by using Connect-AzAccount
@@ -27,8 +27,8 @@ There are three files
 
       **Notes***
       To change the Resource Group Name-> edit the Deploy.ps1 file
-      To change any default value of parmaters -> edit the template.json file (parameters section)
-      To change any value in variables-> edit the template.json file(variable section)
+      To change any default value of parmaters -> edit the ParameterFile.json file (parameters section)
+      To change any value in variables-> edit the AppInfra.json file(variable section)
 
 
 
