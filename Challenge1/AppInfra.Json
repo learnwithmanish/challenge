@@ -1,0 +1,1388 @@
+{
+
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0",
+    "parameters": {
+                    
+            
+
+            "BastionPIP": {
+                "defaultValue": "BastionPIP",
+                "type": "String"
+                },
+
+            "MgMt-VM1-PIP":{
+                 "defaultValue": "MgMt-VM1-PIP",
+                "type": "String"
+            },
+        "nsg_web_name": {
+                "defaultValue": "Web-NSG1",
+                "type": "String"
+             },
+        "nsg_app_name": {
+                "defaultValue": "APP-NSG1",
+                "type": "String"
+        },
+        "nsg_DB_name": {
+                "defaultValue": "DB-NSG1",
+                "type": "String"
+        },
+         "nsg_mgmt_name": {
+                "defaultValue": "MGMT-NSG1",
+                "type": "String"
+        },
+        "Back_LB_name": {
+            "defaultValue": "Back-LB1",
+            "type": "String"
+        },
+        "availabilitySets_App_Tier_name": {
+            "defaultValue": "AV-App-Tier",
+            "type": "String"
+        },
+        "availabilitySets_Web_Tier_name": {
+            "defaultValue": "AV-Web-Tier",
+            "type": "String"
+        },
+         "networkInterfaces_Web_VM001_name": {
+            "defaultValue": "Web-VM001-NIC",
+            "type": "String"
+        },
+        "networkInterfaces_Web_VM002_name": {
+            "defaultValue": "Web-VM002-NIC",
+            "type": "String"
+        },
+        "networkInterfaces_App_VM001_name": {
+            "defaultValue": "App-VM001-NIC",
+            "type": "String"
+        },
+        "networkInterfaces_App_VM002_name": {
+            "defaultValue": "App-VM002-NIC",
+            "type": "String"
+        },
+        "networkInterfaces_DB_sql_VM001_name": {
+            "defaultValue": "DB-SQL-VM001-NIC",
+            "type": "String"
+        },
+        "networkInterfaces_DB_sql_VM002_name": {
+            "defaultValue": "DB-SQL-VM002-NIC",
+            "type": "String"
+        },
+        "networkInterfaces_Mgmt_VM001_name": {
+            "defaultValue": "Mgmt-VM001-NIC",
+            "type": "String"
+        },
+
+        "adminusername": {
+          "defaultValue": "VmAdmin",
+            "type": "String"
+        },
+
+        "adminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Password for the Virtual Machine."
+                    }
+                },
+
+        "VM_App_VM001_name": {
+            "defaultValue": "App-VM001",
+            "type": "String"
+        },
+        "VM_App_VM002_name": {
+            "defaultValue": "App-VM002",
+            "type": "String"
+        },
+        "VM_Web_VM001_name": {
+            "defaultValue": "Web-VM001",
+            "type": "String"
+        },
+        "VM_Web_VM002_name": {
+            "defaultValue": "Web-VM002",
+            "type": "String"
+        },
+        "VM_Mgmt_VM001_name": {
+            "defaultValue": "Mgmt-VM001",
+            "type": "String"
+        },
+        "VM_DB_SQL_VM001_name": {
+            "defaultValue": "DB-SQL-VM001",
+            "type": "String"
+        },
+        "VM_DB_SQL_VM002_name": {
+            "defaultValue": "DB-SQL-VM002",
+            "type": "String"
+        },
+        "OSVersion": {
+   
+        "defaultValue": "2016-datacenter-server-core-g2",
+        "type": "String"      
+      },
+
+    "vmSize": {
+
+         "defaultValue": "Standard_DS1_v2",
+         "type": "String"
+      },
+      "sqlVirtualMachines_DB_SQL_VM001_name": {
+            "defaultValue": "DB-SQL-VM001",
+            "type": "String"
+        },
+        "sqlVirtualMachines_DB_SQL_VM002_name": {
+            "defaultValue": "DB-SQL-VM002",
+            "type": "String"
+        },
+
+          "bastionHosts_name": {
+            "defaultValue": "BastionVM1",
+            "type": "String"
+        }
+
+
+    },
+
+
+    "variables": {
+            "storageactname": "[uniqueString(resourceGroup().id)]",
+            "storageacttype": "Standard_LRS",
+            "location": "centralindia",
+            "VnetName": "VNET1",
+            "AppGw1PublicIP": "AppGw1-PIP",
+            "AppGWName": "AppGw1",
+            "AppGW_AppFW_Pol_name": "WafPol01",
+            "MgmtSubnetAddressPrefix":"10.0.1.0/24",
+            "WebSubnetAddressPrefix":"10.0.2.0/24",
+            "AppSubnetAddressPrefix":"10.0.3.0/24",
+            "DBSubnetAddressPrefix":"10.0.4.0/24",
+            "AzureBastionSubnetAddressPrefix": "10.0.5.0/26",
+            "AppGatewaySubnetPrefix": "10.0.6.0/27",
+            "BackLBAddressPrefix":"10.0.3.4"
+            
+
+        
+
+
+    },
+
+
+
+    "resources": [
+            //creation of Storage Account
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2022-09-01",
+            "name": "[variables('storageactname')]",
+            "location": "[variables('location')]",
+            "sku": {
+                "name":"[variables('storageacttype')]"
+            },
+            "kind": "StorageV2"
+        },
+ //End for creation of Storage Account
+
+
+//Creation of Pulbic IPs 
+ {              
+    "type": "Microsoft.Network/publicIPAddresses",
+    "apiVersion": "2022-09-01",
+    "name":"[variables('AppGw1PublicIP')]",
+    "location":"[variables('location')]",
+    "sku": {
+        "name": "Standard"
+            },
+    "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+            "domainNameLabel": "[concat('dnsappgw1',uniqueString(resourceGroup().id))]"
+        }
+    }
+ },
+
+{
+    
+    "type": "Microsoft.Network/publicIPAddresses",
+    "apiVersion": "2022-09-01",
+    "name":"[parameters('BastionPIP')]",
+    "sku": {
+            "name": "Standard"
+        },
+    "location": "[variables('location')]",
+    "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+            "domainNameLabel": "[concat('dnsbastion',uniqueString(resourceGroup().id))]"
+        }
+    }
+},
+
+{
+    "type": "Microsoft.Network/publicIPAddresses",
+    "apiVersion": "2022-09-01",
+    "name":"[parameters('MgMt-VM1-PIP')]",
+    "location": "[variables('location')]",
+    "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+            "domainNameLabel": "[concat('dnsmgmtvm1',uniqueString(resourceGroup().id))]"
+        }
+    }
+},
+//End of Creation of Pulbic IPs 
+
+//Creation of NSGs
+{
+    
+    "type": "Microsoft.Network/networkSecurityGroups",
+    "apiVersion": "2022-09-01",
+    "name":"[parameters('nsg_mgmt_name')]",
+    "location": "[variables('location')]",
+    "properties": {
+        
+    }
+},
+
+{
+    "type": "Microsoft.Network/networkSecurityGroups",
+    "apiVersion": "2022-09-01",
+    "name":"[parameters('nsg_web_name')]",
+    "location": "[variables('location')]",
+    "properties": {
+        "securityRules": [
+            {
+                "name": "Port_443",
+                "properties": {
+                    "description": "From AppGwSubnet to WEB-Tier on Port 443",
+                    "protocol": "Tcp",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "443",
+                    "sourceAddressPrefix": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('AppGw1PublicIP'))).ipAddress]",
+                    "destinationAddressPrefix": "*",
+                    "access": "Allow",
+                    "priority": 100,
+                    "direction": "Inbound"
+                }
+            },
+
+            {
+                "name": "Port_80",
+                "properties": {
+                    "description": "From AppGwSubnet to Web-Tier on Port 80",
+                    "protocol": "Tcp",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "80",
+                    "sourceAddressPrefix": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('AppGw1PublicIP'))).ipAddress]",
+                    "destinationAddressPrefix": "*",
+                    "access": "Allow",
+                    "priority": 101,
+                    "direction": "Inbound"
+                }
+            }
+
+            
+        ]
+    }
+},
+
+{
+    
+    "type": "Microsoft.Network/networkSecurityGroups",
+    "apiVersion": "2022-09-01",
+    "name":"[parameters('nsg_app_name')]",
+    "location": "[variables('location')]",
+    "properties": {
+        "securityRules": [
+            {
+                "name": "Port_443",
+                "properties": {
+                    "description": "From BackLB to App-Tier on Port 443",
+                    "protocol": "Tcp",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "443",
+                    "sourceAddressPrefix": "[variables('BackLBAddressPrefix')]",
+                    "destinationAddressPrefix": "*",
+                    "access": "Allow",
+                    "priority": 100,
+                    "direction": "Inbound"
+                }
+            },
+
+            {
+                "name": "Port_80",
+                "properties": {
+                    "description": "From BackLB to App-Tier on Port 80",
+                    "protocol": "Tcp",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "80",
+                    "sourceAddressPrefix": "[variables('BackLBAddressPrefix')]",
+                    "destinationAddressPrefix": "*",
+                    "access": "Allow",
+                    "priority": 102,
+                    "direction": "Inbound"
+                }
+            }
+
+            
+        ]
+    }
+},
+
+{
+    "type": "Microsoft.Network/networkSecurityGroups",
+    "apiVersion": "2022-09-01",
+    "name":"[parameters('nsg_DB_name')]",
+    "location": "[variables('location')]",
+    "properties": {
+        "securityRules": [
+            {
+                "name": "Port_1433",
+                "properties": {
+                    "description": "App-Tier to DB-Tier on Port 1433",
+                    "protocol": "Tcp",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "1433",
+                    "sourceAddressPrefix": "[variables('AppSubnetAddressPrefix')]",
+                    "destinationAddressPrefix": "*",
+                    "access": "Allow",
+                    "priority": 100,
+                    "direction": "Inbound"
+                }
+            }
+
+            
+        ]
+        
+    }
+},
+//End of Creation of NSG
+
+//Creation of Vnet and Subnets
+
+{
+ 
+     "type": "Microsoft.Network/virtualNetworks",
+     "apiVersion": "2022-09-01",
+     "name":"[variables('VnetName')]",
+     "location": "[variables('location')]",
+      "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsg_DB_name'))]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsg_mgmt_name'))]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsg_web_name'))]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsg_app_name'))]"
+            ],
+      "properties": {
+         "addressSpace": {
+             "addressPrefixes": [
+                 "10.0.0.0/16"
+             ]
+         },
+         "subnets": [
+                      
+            {
+                 "name": "AzureBastionSubnet",
+                 "properties": {
+                     "addressPrefix": "[variables('AzureBastionSubnetAddressPrefix')]"
+                                                           
+                 }
+            
+             },
+            {
+                 "name": "ApplicationGatewaySubnet",
+                 "properties": {
+                     "addressPrefix": "[variables('AppGatewaySubnetPrefix')]",
+                     "privateEndpointNetworkPolicies": "Enabled",
+                    "privateLinkServiceNetworkPolicies": "Enabled"
+                                                           
+                 }
+            
+             },
+
+             {
+                 "name": "Mgmt-Subnet",
+                 "properties": {
+                     "addressPrefix": "[variables('MgmtSubnetAddressPrefix')]",
+                     "networkSecurityGroup": {
+                     "id":"[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsg_mgmt_name'))]"
+                     
+                     }
+                    
+                 }
+             },
+
+             {
+                 "name": "Web-Subnet",
+                 "properties": {
+                     "addressPrefix": "[variables('WebSubnetAddressPrefix')]",
+                     "networkSecurityGroup": {
+                     "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsg_web_name'))]"
+                                          
+                     }
+                     }
+                     
+             },
+
+             {
+                 "name": "App-Subnet",
+                 "properties": {
+                     "addressPrefix": "[variables('AppSubnetAddressPrefix')]",
+                     "networkSecurityGroup": {
+                     "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsg_app_name'))]"
+                     }
+                 }
+             },
+             {
+                 "name": "DB-Subnet",
+                 "properties": {
+                     "addressPrefix": "[variables('DBSubnetAddressPrefix')]",
+                     "networkSecurityGroup": {
+                     "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsg_DB_name'))]"
+                     }
+                 }
+             }
+         ]
+     }
+},
+//End of Creation of Vnet and Subnets
+
+//Creation of App Gateway
+
+{
+      "type": "Microsoft.Network/applicationGateways",
+      "apiVersion": "2022-09-01",
+      "name": "[variables('AppGWName')]",
+      "location": "[variables('location')]",
+     "properties": {
+        "sku": {
+          "name": "WAF_v2",
+          "tier": "WAF_v2",
+          "capacity": 2
+        },
+        "gatewayIPConfigurations": [
+          {
+            "name": "AppGwIpConfig",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('VnetName'), 'ApplicationGatewaySubnet')]"
+              }
+            }
+          }
+        ],
+        "frontendIPConfigurations": [
+          {
+            "name": "AppGwFrontendPIP",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('AppGw1PublicIP'))]"
+              }
+            }
+                      }
+
+                     
+        ],
+        "frontendPorts": [
+          {
+            "name": "port_80",
+            "properties": {
+              "port": 80
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "AppGwBackendPool",
+            "properties": {}
+          }
+        ],
+        "backendHttpSettingsCollection": [
+          {
+            "name": "AppGwHTTPSetting",
+            "properties": {
+              "port": 80,
+              "protocol": "Http",
+              "cookieBasedAffinity": "Disabled",
+              "pickHostNameFromBackendAddress": false,
+              "requestTimeout": 20
+            }
+          }
+        ],
+        "httpListeners": [
+          {
+            "name": "AppGwListener",
+            "properties": {
+              "firewallPolicy": {
+                "id": "[resourceId('Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies', variables('AppGW_AppFW_Pol_name'))]"
+              },
+              "frontendIPConfiguration": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', variables('AppGWName'), 'AppGwFrontendPIP')]"
+              },
+              "frontendPort": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', variables('AppGWName'), 'port_80')]"
+              },
+              "protocol": "Http",
+              "requireServerNameIndication": false
+            }
+          }
+        ],
+        "requestRoutingRules": [
+          {
+            "name": "AppGwRoutingRule",
+            "properties": {
+              "ruleType": "Basic",
+              "priority": 10,
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', variables('AppGWName'), 'AppGwListener')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', variables('AppGWName'), 'AppGwBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', variables('AppGWName'), 'AppGwHTTPSetting')]"
+              }
+            }
+          }
+        ],
+        "enableHttp2": false,
+        "firewallPolicy": {
+          "id": "[resourceId('Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies', variables('AppGW_AppFW_Pol_name'))]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies', variables('AppGW_AppFW_Pol_name'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('VnetName'))]",
+        "[resourceId('Microsoft.Network/publicIPAddresses',variables('AppGw1PublicIP'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies",
+      "apiVersion": "2022-09-01",
+      "name": "[variables('AppGW_AppFW_Pol_name')]",
+      "location": "[variables('location')]",
+      "properties": {
+        "customRules": [
+          {
+            "name": "CustRule01",
+            "priority": 100,
+            "ruleType": "MatchRule",
+            "action": "Block",
+            "matchConditions": [
+              {
+                "matchVariables": [
+                  {
+                    "variableName": "RemoteAddr"
+                  }
+                ],
+                "operator": "IPMatch",
+                "negationConditon": true,
+                "matchValues": [
+                  "10.10.10.0/24"
+                ]
+              }
+            ]
+          }
+        ],
+        "policySettings": {
+          "requestBodyCheck": true,
+          "maxRequestBodySizeInKb": 128,
+          "fileUploadLimitInMb": 100,
+          "state": "Enabled",
+          "mode": "Prevention"
+        },
+        "managedRules": {
+          "managedRuleSets": [
+            {
+              "ruleSetType": "OWASP",
+              "ruleSetVersion": "3.1"
+            }
+          ]
+        }
+      }
+    },
+//End of Creation of App Gateway
+
+//Creation of Back end load balancer
+{
+    
+    "type": "Microsoft.Network/loadBalancers",
+    "apiVersion": "2022-09-01",
+    "name": "[parameters('Back_LB_name')]",
+    "location": "[variables('location')]",
+    "sku": {
+    "name": "Standard",
+    "tier": "Regional"
+  },
+    "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('VNETNAME'))]"
+    ],
+    "properties": {
+        "frontendIPConfigurations": [
+            {
+                "name": "loadBalancerFrontEnd1",
+                "properties": {
+                    "privateIPAddress": "0.0.0.0",
+                    "privateIPAllocationMethod": "Dynamic",
+                    "subnet": {
+                        "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('VNETNAME'), 'App-Subnet')]"
+                    }
+                }
+            }
+        ],
+        "backendAddressPools": [
+            {
+                "name": "Back-LB-BackendPool"
+            }
+        ]
+        
+        
+    }
+},
+//End of Creation of Backend Load Balancer
+
+//Creation of Availablity Sets
+
+    {
+        "name": "[parameters('availabilitySets_Web_Tier_name')]",
+        "type": "Microsoft.Compute/availabilitySets",
+        "apiVersion": "2022-11-01",
+        "location": "[variables('location')]",
+        "sku": {
+                "name": "Aligned"
+        },
+        "properties": {
+             "platformUpdateDomainCount": 5,
+            "platformFaultDomainCount": 2
+        }
+    },
+
+    {
+        "name": "[parameters('availabilitySets_App_Tier_name')]",
+        "type": "Microsoft.Compute/availabilitySets",
+        "apiVersion": "2022-11-01",
+        "location": "[variables('location')]",
+        "sku": {
+                "name": "Aligned"
+        },
+        "properties": {
+             "platformUpdateDomainCount": 5,
+            "platformFaultDomainCount": 2
+        }
+    },
+
+    //Creation of NIC cards for VM
+      {
+        
+        "type": "Microsoft.Network/networkInterfaces",
+        "apiVersion": "2022-09-01",
+        "name": "[parameters('networkInterfaces_Web_VM001_name')]",
+        "location": "[variables('location')]",
+             
+        "dependsOn": [
+            "[resourceId('Microsoft.Network/virtualNetworks', variables('VNETNAME'))]",
+            "[resourceId('Microsoft.Network/applicationGateways',variables('AppGWName'))]"
+        ],
+        "properties": {
+            "ipConfigurations": [
+                {
+                    "name": "ipConfig1",
+                    "properties": {
+                        "privateIPAllocationMethod": "Dynamic",
+                        "subnet": {
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('VNETNAME'), 'Web-Subnet')]"
+                        },
+                "applicationGatewayBackendAddressPools": [
+                {
+                  "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', variables('AppGWName'), 'AppGwBackendPool')]"
+                }
+              ]
+                    }
+                }
+            ]
+        }
+    },
+
+    {
+        "name": "[parameters('networkInterfaces_Web_VM002_name')]",
+        "type": "Microsoft.Network/networkInterfaces",
+        "apiVersion": "2022-09-01",
+        "location": "[variables('location')]",
+        
+        
+        "dependsOn": [
+            "[resourceId('Microsoft.Network/virtualNetworks', variables('VNETNAME'))]",
+            "[resourceId('Microsoft.Network/applicationGateways',variables('AppGWName'))]"
+        ],
+        "properties": {
+            "ipConfigurations": [
+                {
+                    "name": "ipConfig1",
+                    "properties": {
+                        "privateIPAllocationMethod": "Dynamic",
+                        "subnet": {
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('VNETNAME'), 'Web-Subnet')]"
+                        },
+                "applicationGatewayBackendAddressPools": [
+                {
+                  "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', variables('AppGWName'), 'AppGwBackendPool')]"
+                }
+              ]
+                    }
+                }
+            ]
+        }
+    },
+    {
+        "name": "[parameters('networkInterfaces_App_VM001_name')]",
+        "type": "Microsoft.Network/networkInterfaces",
+        "apiVersion": "2022-09-01",
+        "location": "[variables('location')]",
+        
+        
+        "dependsOn": [
+            "[resourceId('Microsoft.Network/virtualNetworks', variables('VNETNAME'))]",
+             "[resourceId('Microsoft.Network/loadBalancers', parameters('Back_LB_name'))]"
+        ],
+        "properties": {
+            "ipConfigurations": [
+                {
+                    "name": "ipConfig1",
+                    "properties": {
+                        "privateIPAllocationMethod": "Dynamic",
+                        "subnet": {
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('VNETNAME'), 'App-Subnet')]"
+                        },
+                "loadBalancerBackendAddressPools": [
+                {
+                  "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', parameters('Back_LB_name'), 'Back-LB-BackendPool')]"
+                }
+              ]
+                    }
+                }
+            ]
+        }
+    },
+
+    {
+        "name": "[parameters('networkInterfaces_App_VM002_name')]",
+        "type": "Microsoft.Network/networkInterfaces",
+        "apiVersion": "2022-09-01",
+        "location": "[variables('location')]",
+        
+       
+        "dependsOn": [
+
+            "[resourceId('Microsoft.Network/virtualNetworks', variables('VNETNAME'))]",
+            "[resourceId('Microsoft.Network/loadBalancers', parameters('Back_LB_name'))]"
+        ],
+        "properties": {
+            "ipConfigurations": [
+                {
+                    "name": "ipConfig1",
+                    "properties": {
+                        "privateIPAllocationMethod": "Dynamic",
+                        "subnet": {
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('VNETNAME'), 'App-Subnet')]"
+                        },
+                "loadBalancerBackendAddressPools": [
+                {
+                  "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', parameters('Back_LB_name'), 'Back-LB-BackendPool')]"
+                }
+              ]
+                    }
+                }
+            ]
+        }
+    },
+    {
+        "name": "[parameters('networkInterfaces_DB_sql_VM001_name')]",
+        "type": "Microsoft.Network/networkInterfaces",
+        "apiVersion": "2022-09-01",
+        "location": "[variables('location')]",
+        
+       
+        "dependsOn": [
+            "[resourceId('Microsoft.Network/virtualNetworks', variables('VNETNAME'))]"
+            
+            ],
+        "properties": {
+            "ipConfigurations": [
+                {
+                    "name": "ipConfig1",
+                    "properties": {
+                        "privateIPAllocationMethod": "Dynamic",
+                        "subnet": {
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('VNETNAME'), 'DB-Subnet')]"
+                        }
+                
+                    }
+                }
+            ]
+        }
+    },
+
+    {
+        "name": "[parameters('networkInterfaces_DB_sql_VM002_name')]",
+        "type": "Microsoft.Network/networkInterfaces",
+        "apiVersion": "2022-09-01",
+        "location": "[variables('location')]",
+        
+        
+        "dependsOn": [
+            "[resourceId('Microsoft.Network/virtualNetworks', variables('VNETNAME'))]"
+            
+        ],
+        "properties": {
+            "ipConfigurations": [
+                {
+                    "name": "ipConfig1",
+                    "properties": {
+                        "privateIPAllocationMethod": "Dynamic",
+                        "subnet": {
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('VNETNAME'), 'DB-Subnet')]"
+                        }
+                
+                    }
+                }
+            ]
+        }
+    },
+
+    {
+        "name": "[parameters('networkInterfaces_Mgmt_VM001_name')]",
+        "type": "Microsoft.Network/networkInterfaces",
+        "apiVersion": "2022-09-01",
+        "location": "[variables('location')]",
+        
+       
+        "dependsOn": [
+            "[resourceId('Microsoft.Network/virtualNetworks', variables('VNETNAME'))]",
+            "[resourceId('Microsoft.Network/publicIPAddresses', parameters('MgMt-VM1-PIP'))]"
+            
+        ],
+        "properties": {
+            "ipConfigurations": [
+                {
+                    "name": "ipConfig1",
+                    "properties": {
+                        "privateIPAllocationMethod": "Dynamic",
+                        "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('MgMt-VM1-PIP'))]"
+                            },
+                        "subnet": {
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('VNETNAME'), 'Mgmt-Subnet')]"
+                        }
+                
+                    }
+                }
+            ]
+        }
+    },
+
+// End of NIC Card
+
+// Start of VMs
+
+{
+    "type": "Microsoft.Compute/virtualMachines",
+    "apiVersion": "2022-11-01",
+    "name": "[parameters('VM_Web_VM001_name')]",
+    "location":"[variables('location')]",
+    "properties":{
+         "availabilitySet": {
+                    "id": "[resourceId('Microsoft.Compute/availabilitySets', parameters('availabilitySets_Web_Tier_name'))]"
+                },
+
+        "hardwareProfile": {
+            "vmSize":"[parameters('vmSize')]"
+        },
+
+    "osProfile": {
+        "computerName":"[parameters('VM_Web_VM001_name')]",
+        "adminUsername":"[parameters('adminusername')]",
+        "adminPassword":"[parameters('adminPassword')]"
+    },
+
+    "storageProfile": {
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "[parameters('OSVersion')]",
+            "version": "latest"
+          },
+           "osDisk": {
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "StandardSSD_LRS"
+            }
+          }
+    },
+   
+          "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces',parameters('networkInterfaces_Web_VM001_name'))]"
+            }
+          ]
+          }
+},
+"dependsOn": [
+        "[resourceId('Microsoft.Compute/availabilitySets', parameters('availabilitySets_Web_Tier_name'))]",
+        "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_Web_VM001_name'))]"
+      
+      ]
+},
+
+{
+    "type": "Microsoft.Compute/virtualMachines",
+    "apiVersion": "2022-11-01",
+    "name": "[parameters('VM_Web_VM002_name')]",
+    "location":"[variables('location')]",
+    "properties":{
+
+"availabilitySet": {
+                    "id": "[resourceId('Microsoft.Compute/availabilitySets', parameters('availabilitySets_Web_Tier_name'))]"
+                },
+        "hardwareProfile": {
+            "vmSize":"[parameters('vmSize')]"
+        },
+
+    "osProfile": {
+        "computerName":"[parameters('VM_Web_VM002_name')]",
+        "adminUsername":"[parameters('adminusername')]",
+        "adminPassword":"[parameters('adminPassword')]"
+    },
+
+    "storageProfile": {
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "[parameters('OSVersion')]",
+            "version": "latest"
+          },
+           "osDisk": {
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "StandardSSD_LRS"
+            }
+          }
+    },
+   
+          "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces',parameters('networkInterfaces_Web_VM002_name'))]"
+            }
+          ]
+          }
+},
+"dependsOn": [
+         "[resourceId('Microsoft.Compute/availabilitySets', parameters('availabilitySets_Web_Tier_name'))]",
+        "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_Web_VM002_name'))]"
+      
+      ]
+},
+
+{
+    "type": "Microsoft.Compute/virtualMachines",
+    "apiVersion": "2022-11-01",
+    "name": "[parameters('VM_App_VM001_name')]",
+    "location":"[variables('location')]",
+    "properties":{
+
+        "availabilitySet": {
+                    "id": "[resourceId('Microsoft.Compute/availabilitySets', parameters('availabilitySets_App_Tier_name'))]"
+                },
+
+        "hardwareProfile": {
+            "vmSize":"[parameters('vmSize')]"
+        },
+
+    "osProfile": {
+        "computerName":"[parameters('VM_App_VM001_name')]",
+        "adminUsername":"[parameters('adminusername')]",
+        "adminPassword":"[parameters('adminPassword')]"
+    },
+
+    "storageProfile": {
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "[parameters('OSVersion')]",
+            "version": "latest"
+          },
+           "osDisk": {
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "StandardSSD_LRS"
+            }
+          }
+    },
+   
+          "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces',parameters('networkInterfaces_App_VM001_name'))]"
+            }
+          ]
+          }
+},
+"dependsOn": [
+        "[resourceId('Microsoft.Compute/availabilitySets', parameters('availabilitySets_App_Tier_name'))]",
+        "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_App_VM001_name'))]"
+      
+      ]
+},
+
+{
+    "type": "Microsoft.Compute/virtualMachines",
+    "apiVersion": "2022-11-01",
+    "name": "[parameters('VM_App_VM002_name')]",
+    "location":"[variables('location')]",
+    "properties":{
+
+    "availabilitySet": {
+                    "id": "[resourceId('Microsoft.Compute/availabilitySets', parameters('availabilitySets_App_Tier_name'))]"
+                },
+        "hardwareProfile": {
+            "vmSize":"[parameters('vmSize')]"
+        },
+
+    "osProfile": {
+        "computerName":"[parameters('VM_App_VM002_name')]",
+        "adminUsername":"[parameters('adminusername')]",
+        "adminPassword":"[parameters('adminPassword')]"
+    },
+
+    "storageProfile": {
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "[parameters('OSVersion')]",
+            "version": "latest"
+          },
+           "osDisk": {
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "StandardSSD_LRS"
+            }
+          }
+    },
+   
+          "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces',parameters('networkInterfaces_App_VM002_name'))]"
+            }
+          ]
+          }
+        },
+        "dependsOn": [
+        "[resourceId('Microsoft.Compute/availabilitySets', parameters('availabilitySets_App_Tier_name'))]",
+        "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_App_VM002_name'))]"
+      
+      ]
+},
+
+ {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2022-11-01",
+            "name": "[parameters('VM_DB_SQL_VM001_name')]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_DB_sql_VM001_name'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts/', variables('storageactname'))]"
+            ],
+            "tags": {
+                "VMApp": "DB",
+                "VMType": "Window-DB",
+                "Environment": "Prod"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_B1ms"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "microsoftsqlserver",
+                        "offer": "sql2014sp3-ws2012r2",
+                        "sku": "express",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "osType": "Windows",
+                        "name": "[concat(parameters('VM_DB_SQL_VM001_name'), '_OsDisk_1_',uniqueString('123)'))]",
+                        "createOption": "FromImage",
+                        "caching": "ReadWrite",
+                        "managedDisk": {
+                            "storageAccountType": "Standard_LRS"
+                         
+                        },
+                        "diskSizeGB": 127
+                    },
+                    "dataDisks": [
+                        {
+                            "lun": 0,
+                            "name": "[concat(parameters('VM_DB_SQL_VM001_name'), '_DataDisk_0')]",
+                            "createOption": "Empty",
+                            "caching": "ReadOnly",
+                            "writeAcceleratorEnabled": false,
+                            "managedDisk": {
+                                "storageAccountType": "[variables('storageacttype')]"
+                                
+                                
+                            },
+                            "diskSizeGB": 200,
+                            "toBeDetached": false
+                        },
+                        {
+                            "lun": 1,
+                            "name": "[concat(parameters('VM_DB_SQL_VM001_name'), '_DataDisk_1')]",
+                            "createOption": "Empty",
+                            "caching": "None",
+                            "writeAcceleratorEnabled": false,
+                            "managedDisk": {
+                                "storageAccountType": "[variables('storageacttype')]"
+                                
+                               
+                            },
+                            "diskSizeGB": 200,
+                            "toBeDetached": false
+                        }
+                    ]
+                },
+                "osProfile": {
+                    "computerName": "[parameters('VM_DB_SQL_VM001_name')]",
+                    "adminUsername":"[parameters('adminusername')]",
+                    "adminPassword": "[parameters('adminPassword')]",
+                    "windowsConfiguration": {
+                        "provisionVMAgent": true,
+                        "enableAutomaticUpdates": true
+                    },
+                    "secrets": [],
+                    "allowExtensionOperations": true
+                   
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_DB_sql_VM001_name'))]"
+                        }
+                    ]
+                }
+            }
+        },
+
+        {
+            "type": "Microsoft.SqlVirtualMachine/sqlVirtualMachines",
+            "apiVersion": "2022-08-01-preview",
+            "name": "[parameters('sqlVirtualMachines_DB_SQL_VM001_name')]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines', parameters('VM_DB_SQL_VM001_name'))]"
+            ],
+            "properties": {
+                "virtualMachineResourceId": "[resourceId('Microsoft.Compute/virtualMachines', parameters('VM_DB_SQL_VM001_name'))]",
+                "sqlImageOffer": "SQL2014-WS2012R2",
+                "sqlServerLicenseType": "PAYG",
+                "sqlManagement": "Full",
+                "sqlImageSku": "Express"
+            }
+        },
+
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2022-11-01",
+            "name": "[parameters('VM_DB_SQL_VM002_name')]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_DB_sql_VM002_name'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts/', variables('storageactname'))]"
+            ],
+            "tags": {
+                "VMApp": "DB",
+                "VMType": "Window-DB",
+                "Environment": "Prod"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_B1ms"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "microsoftsqlserver",
+                        "offer": "sql2014sp3-ws2012r2",
+                        "sku": "express",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "osType": "Windows",
+                        "name": "[concat(parameters('VM_DB_SQL_VM002_name'), '_OsDisk_1_',uniqueString('123)'))]",
+                        "createOption": "FromImage",
+                        "caching": "ReadWrite",
+                        "managedDisk": {
+                            "storageAccountType": "Standard_LRS"
+                         
+                        },
+                        "diskSizeGB": 127
+                    },
+                    "dataDisks": [
+                        {
+                            "lun": 0,
+                            "name": "[concat(parameters('VM_DB_SQL_VM002_name'), '_DataDisk_0')]",
+                            "createOption": "Empty",
+                            "caching": "ReadOnly",
+                            "writeAcceleratorEnabled": false,
+                            "managedDisk": {
+                                "storageAccountType": "[variables('storageacttype')]"
+                                
+                                
+                            },
+                            "diskSizeGB": 200,
+                            "toBeDetached": false
+                        },
+                        {
+                            "lun": 1,
+                            "name": "[concat(parameters('VM_DB_SQL_VM002_name'), '_DataDisk_1')]",
+                            "createOption": "Empty",
+                            "caching": "None",
+                            "writeAcceleratorEnabled": false,
+                            "managedDisk": {
+                                "storageAccountType": "[variables('storageacttype')]"
+                                
+                               
+                            },
+                            "diskSizeGB": 200,
+                            "toBeDetached": false
+                        }
+                    ]
+                },
+                "osProfile": {
+                    "computerName": "[parameters('VM_DB_SQL_VM002_name')]",
+                    "adminUsername":"[parameters('adminusername')]",
+                    "adminPassword": "[parameters('adminPassword')]",
+                    "windowsConfiguration": {
+                        "provisionVMAgent": true,
+                        "enableAutomaticUpdates": true
+                    },
+                    "secrets": [],
+                    "allowExtensionOperations": true
+                   
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_DB_sql_VM002_name'))]"
+                        }
+                    ]
+                }
+            }
+        },
+
+        {
+            "type": "Microsoft.SqlVirtualMachine/sqlVirtualMachines",
+            "apiVersion": "2022-08-01-preview",
+            "name": "[parameters('sqlVirtualMachines_DB_SQL_VM002_name')]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines', parameters('VM_DB_SQL_VM002_name'))]"
+            ],
+            "properties": {
+                "virtualMachineResourceId": "[resourceId('Microsoft.Compute/virtualMachines', parameters('VM_DB_SQL_VM002_name'))]",
+                "sqlImageOffer": "SQL2014-WS2012R2",
+                "sqlServerLicenseType": "PAYG",
+                "sqlManagement": "Full",
+                "sqlImageSku": "Express"
+            }
+        },
+
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2022-11-01",
+            "name": "[parameters('VM_Mgmt_VM001_name')]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_Mgmt_VM001_name'))]"
+            ],
+            "tags": {
+                "VMApp": "Mgmt",
+                "VMType": "WIndows",
+                "Environment": "Prod"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_B2ms"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "MicrosoftWindowsServer",
+                        "offer": "WindowsServer",
+                        "sku": "2012-R2-Datacenter",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "osType": "Windows",
+                        "name": "[concat(parameters('VM_Mgmt_VM001_name'), '_OsDisk_1_', uniqueString('123'))]",
+                        "createOption": "FromImage",
+                        "caching": "ReadWrite",
+                        "managedDisk": {
+                            "storageAccountType": "Standard_LRS"
+                            
+                        },
+                        "diskSizeGB": 127
+                    },
+                    "dataDisks": []
+                },
+                "osProfile": {
+                    "computerName": "[parameters('VM_Mgmt_VM001_name')]",
+                    "adminUsername":"[parameters('adminusername')]",
+                    "adminPassword":"[parameters('adminPassword')]",
+                    "windowsConfiguration": {
+                        "provisionVMAgent": true,
+                        "enableAutomaticUpdates": true
+                    },
+                    "secrets": [],
+                    "allowExtensionOperations": true
+                    
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_Mgmt_VM001_name'))]"
+                        }
+                    ]
+                }
+            }
+        },
+
+        {
+            "type": "Microsoft.Network/bastionHosts",
+            "apiVersion": "2022-09-01",
+            "name": "[parameters('bastionHosts_name')]",
+           "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', parameters('BastionPIP'))]",
+                 "[resourceId('Microsoft.Network/virtualNetworks', variables('VNETNAME'))]"
+           
+            ],
+            "properties": {
+                "dnsName": "[concat(uniqueString(resourcegroup().Id) , '.bastion.azure.com')]",
+                "ipConfigurations": [
+                    {
+                        "name": "IpConf",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('BastionPIP'))]"
+                            },
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('VNETNAME'),'AzureBastionSubnet')]"
+                            }
+                        }
+                    }
+                ]
+            }
+
+  
+        }
+
+            // END of VM Creation and Bastion Host
+    ]
+
+}
