@@ -1,0 +1,31 @@
+{
+  "Eatables": [
+{
+  "Fruits": [  
+          {
+          "name": "Apple",
+          "price": "90"
+          },
+          {
+            "name": "Peer",
+            "price": "110"
+            }            
+            ]
+}, 
+{
+  "Vegetables": 
+  [  
+         {
+          "name": "Cabbage",
+          "price": "40"
+          },
+          {
+          "name": "Brinjal",
+          "price": "35"
+          }            
+   ]
+}
+  ]
+}
+
+
