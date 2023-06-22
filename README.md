@@ -33,9 +33,6 @@ There are three files
 
 
 
-
-
-
 # Challenge 2: Code to query MetaData Informaion of Cloud Instances.I have used Azure Cloud and Powershell for this Challenge. 
 We have one service available in Azure called Azure Instance Metadata Service. This service allows to get meta data info. 
 
@@ -68,5 +65,16 @@ This script will provide JSON output. The JSON file will consist Compute Related
 
 
 
+# Challenge 3: Create a function, where the Object and Key will be the parameter and it's value is the output
+I used PowerShell to create this function. 
+I am using a Json file as input and converting that Json file to PowerShell object.
 
-# Challenge 3: 
+Exectuion of Script:
+
+- Open Powershell 
+- Locate the folder path where Script file (FindObjectValue.ps1) and Json File (InputJsonFile.json) is kept.
+- Run the PS1 file so that Function can get loaded.
+- Conver the json file in PS object "$obj = Get-Content .\InputJsonFile.json | out-string | ConvertFrom-Json"
+- run the function with parameters 
+- I attached sample output file with execution steps in folder Challange3.
+      
